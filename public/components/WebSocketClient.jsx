@@ -1,4 +1,6 @@
 import React from 'react';
+import TextField from 'material-ui/TextField';
+import RaisedButton from 'material-ui/RaisedButton';
 
 export default class WebSocketClient extends React.Component {
 	constructor(props) {
@@ -6,16 +8,20 @@ export default class WebSocketClient extends React.Component {
 
 		this.state = {
 			messages:[],
+			myMessage: '',
 			error: undefined
 		}
+
+		this.handleChange = this.handleChange.bind(this);
+		this.sendMyMessage = this.sendMyMessage.bind(this);
 	}
 
 	componentDidMount() {
 		//Connect using native socket implementation to server
-		const socket = new WebSocket('ws://localhost:8080/');
+		this.socket = new WebSocket('ws://localhost:8080/');
 
-		socket.addEventListener('open', function(e) {
-			socket.send('sending from client@browser', function(err) {
+		this.socket.addEventListener('open', (e) => {
+			this.socket.send('sending from client@browser', function(err) {
 				if(err){
 					console.log('Error: ',  err);
 					this.setState({error: err});
@@ -24,21 +30,58 @@ export default class WebSocketClient extends React.Component {
 			});
 		});
 
-		socket.addEventListener('message', (newMsg) => {
+		this.socket.addEventListener('message', (newMsg) => {
 			console.log('received: %s ', newMsg);
 			this.state.messages.push(newMsg.data);
 			this.setState({messages: this.state.messages});
-		});	}
+		});
+	}
+
+	componentWillUnmount() {
+    if (!this.socket) return;
+
+    try { this.socket.close();
+    } catch (e) {
+    	console.log('Error in closing socket: ', err);
+    }
+  }
+
+	handleChange(event) {
+		this.setState({myMessage: event.target.value});
+	}
+
+	sendMyMessage() {
+		if(this.socket && this.state.myMessage) {
+			this.socket.send('New message @ browser ' + this.state.myMessage, function(err) {
+				if(err){
+					console.log('Error: ',  err);
+					this.setState({error: err});
+				}
+				console.log('message sent..!');
+			});
+		}
+	}
 
 	render() {
 		return (
 			<div>
-				Message: {this.state.messages.length}
-				<ol>
-					{this.state.messages.map((msg) => {
-						<li>{msg}</li>
-					})}
-				</ol>
+				<div>
+					<TextField
+						hintText="Send message"
+						floatingLabelText="Send message"
+						value = {this.state.myMessage}
+						onChange = {this.handleChange}
+					/>
+					<RaisedButton label="Send" primary={true} onClick={this.sendMyMessage}/>
+				</div>
+				<div>
+					Messages({this.state.messages.length})
+					<ol>
+						{this.state.messages.map((msg) => {
+							return <li>{msg}</li>
+						})}
+					</ol>
+				</div>
 			</div>);
 	}
 }

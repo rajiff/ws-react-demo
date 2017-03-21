@@ -8,11 +8,11 @@ const wsService = function(server) {
   wsServer.on('connection', function connection(clientSocket) {
     console.log('Got new socket connection from client ');
 
-    clientSocket.on('client::message', function incoming(message) {
+    clientSocket.on('message', function incoming(message) {
       console.log('received: %s', message);
-    });
 
-    clientSocket.send('sending from @ server ');
+      clientSocket.send(new Date().toDateString() + ' Got ' + message);
+    });
   });
 
 }

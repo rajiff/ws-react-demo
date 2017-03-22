@@ -32,7 +32,7 @@ export default class WebSocketClient extends React.Component {
 
 		this.socket.addEventListener('message', (newMsg) => {
 			console.log('received: %s ', newMsg);
-			this.state.messages.push(newMsg.data);
+			this.state.messages.push(JSON.parse(newMsg.data));
 			this.setState({messages: this.state.messages});
 		});
 	}
@@ -76,11 +76,16 @@ export default class WebSocketClient extends React.Component {
 				</div>
 				<div>
 					Messages({this.state.messages.length})
-					<ol>
-						{this.state.messages.map((msg) => {
-							return <li>{msg}</li>
-						})}
-					</ol>
+					<ul>
+						{this.state.messages
+							.sort(function(left, right){
+								return left.seq <= right.seq
+							})
+							.map((msg) => {
+								return <li key={msg.seq}>{msg.ts} : {msg.message}</li>
+							}
+						)}
+					</ul>
 				</div>
 			</div>);
 	}

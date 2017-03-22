@@ -31,7 +31,6 @@ export default class WebSocketClient extends React.Component {
 		});
 
 		this.socket.addEventListener('message', (newMsg) => {
-			console.log('received: %s ', newMsg);
 			this.state.messages.push(JSON.parse(newMsg.data));
 			this.setState({messages: this.state.messages});
 		});

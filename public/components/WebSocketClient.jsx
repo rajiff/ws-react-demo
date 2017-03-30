@@ -81,7 +81,7 @@ export default class WebSocketClient extends React.Component {
 								return left.seq <= right.seq
 							})
 							.map((msg) => {
-								return <li key={msg.seq}>{msg.ts} : {msg.message}</li>
+								return <li key={msg.seq}>{msg.ts} : <h3 style={{display:'inline'}}>{msg.message}</h3></li>
 							}
 						)}
 					</ul>

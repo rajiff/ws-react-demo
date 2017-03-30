@@ -1,6 +1,7 @@
 import React from 'react';
 import TextField from 'material-ui/TextField';
 import RaisedButton from 'material-ui/RaisedButton';
+import io from 'socket.io-client';
 
 export default class WebSocketClient extends React.Component {
 	constructor(props) {
@@ -17,33 +18,25 @@ export default class WebSocketClient extends React.Component {
 	}
 
 	componentDidMount() {
-		//Connect using native socket implementation to server
-		this.socket = new WebSocket('ws://localhost:8080/');
+		this.socket = io();
 
-		this.socket.addEventListener('open', (e) => {
-			this.socket.send('sending from client@browser', function(err) {
-				if(err){
-					console.log('Error: ',  err);
-					this.setState({error: err});
-				}
-				console.log('Send message');
-			});
-		});
-
-		this.socket.addEventListener('message', (newMsg) => {
-			this.state.messages.push(JSON.parse(newMsg.data));
+		this.socket.on('PONG', (newMsg) => {
+			newMsg = JSON.parse(newMsg);
+			// console.log('Got message ', newMsg);
+    		this.state.messages.push(newMsg);
 			this.setState({messages: this.state.messages});
-		});
+  		});
 	}
 
 	componentWillUnmount() {
-    if (!this.socket) return;
+	    if (!this.socket) return;
 
-    try { this.socket.close();
-    } catch (e) {
-    	console.log('Error in closing socket: ', err);
-    }
-  }
+	    try {
+	    	this.socket.close();
+	    } catch (e) {
+	    	console.log('Error in closing socket: ', err);
+	    }
+  	}
 
 	handleChange(event) {
 		this.setState({myMessage: event.target.value});
@@ -51,10 +44,11 @@ export default class WebSocketClient extends React.Component {
 
 	sendMyMessage() {
 		if(this.socket && this.state.myMessage) {
-			this.socket.send('New message @ browser ' + this.state.myMessage, function(err) {
-				if(err){
-					console.log('Error: ',  err);
-					this.setState({error: err});
+			this.socket.emit('PING', ('New message @ browser ' + this.state.myMessage), function(result){
+				// console.log('Test this', result);
+				if(!result) {
+					console.log('Error in sending websocket message ', result);
+					this.setState({error: result});
 				}
 				console.log('message sent..!');
 			});

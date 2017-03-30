@@ -1,26 +1,32 @@
-const WebSocket = require('ws');
+const socketIO = require('socket.io');
 
 const wsService = function(server) {
   let msgSeq = 0;
-  const wsServer = new WebSocket.Server({
-    server
-  });
 
-  wsServer.on('connection', function connection(clientSocket) {
-    console.log('Got new socket connection from client ');
+  const wsServer = socketIO(server);
 
-    clientSocket.on('message', function incoming(message) {
+  wsServer.on('connection', function(clientSocket) {
+    console.log('[*] Got new client socket connection ');
+
+    // PING is the event name
+    clientSocket.on('PING', function(message) {
       console.log('received: %s', message);
 
       let now = new Date();
-      clientSocket.send(JSON.stringify({
+      let msg = {
         seq: ++msgSeq,
         ts: (now.toDateString() + ' ' + now.toTimeString()),
         message: ' Got ' + message
-      }));
+      };
+
+      // PONG is the event name
+      clientSocket.emit('PONG', JSON.stringify(msg));
+    });
+
+    clientSocket.on('disconnect', function() {
+      console.log('[*] Client socket disconnected ...!');
     });
   });
-
 }
 
 

@@ -16,7 +16,7 @@ export default class WebSocketClient extends React.Component {
 		this.handleChange = this.handleChange.bind(this);
 		this.sendMyMessage = this.sendMyMessage.bind(this);
 	}
-
+    //Made some change
 	componentDidMount() {
 		this.socket = io();
 

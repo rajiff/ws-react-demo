@@ -14,7 +14,7 @@ export default class WebSocketClient extends React.Component {
 			isSwitchedToWebRTC: false,
 			messages:[],
 			myMessage: '',
-			pageScreenshotColln: [],
+			pageScreenshotUrl: undefined,
 			error: undefined
 		}
 	} // end of constructor
@@ -32,7 +32,7 @@ export default class WebSocketClient extends React.Component {
 		});
 
 		this.p2pSocket.on('peer-msg', (newMsg) => {
-			console.log('Got message ', newMsg);
+			// console.log('Got message ', newMsg);
 			newMsg = JSON.parse(newMsg);
 
     	let messages = this.state.messages;
@@ -41,7 +41,9 @@ export default class WebSocketClient extends React.Component {
   	});
 
   	this.p2pSocket.on('peer-file', (data) => {
-    	this.pushNewScreenShot(data.file);
+      let fileBytes = new Uint8Array(data.file)
+      let blob = new window.Blob([fileBytes], {type: 'text/html'})
+    	this.pushNewScreenShot(blob);
   	});
 
   	this.p2pSocket.on('go-private', (newMsg) => {
@@ -73,18 +75,11 @@ export default class WebSocketClient extends React.Component {
 		this.setState({myMessage: event.target.value});
 	}
 
-  pushNewScreenShot = (data) => {
-    let blob = data;
-    // let blob = new window.Blob([new Uint8Array(data.file)], {type: 'test/html'});
-    let urlCreator = window.URL || window.webkitURL
+  pushNewScreenShot = (blob) => {
+    // console.log("[ <- ]", blob);
+    let urlCreator = window.URL || window.webkitURL;
     let fileUrl = urlCreator.createObjectURL(blob)
-
-    console.log("Received blob ", blob);
-    console.log("URL ", fileUrl);
-    // window.open(fileUrl);
-    let colln = this.state.pageScreenshotColln;
-    colln.push(fileUrl);
-    this.setState({pageScreenshotColln: colln});
+    this.setState({pageScreenshotUrl: fileUrl});
   }
 
 	switchToWebRTC = () => {
@@ -111,10 +106,6 @@ export default class WebSocketClient extends React.Component {
 				ts: (now.toDateString() + ' ' + now.toTimeString()),
 				message: `[${this.p2pSocket.peerId}] ${this.state.myMessage}`
 			};
-
-			let screenShotBlog = this.screenShotPage();
-			console.log("Sending blob ", screenShotBlog);
-  		this.p2pSocket.emit('peer-file', {file:screenShotBlog});
 
 			this.p2pSocket.emit('peer-msg', JSON.stringify(msg), function(result) {
 				// console.log('Test this', result);
@@ -144,7 +135,6 @@ export default class WebSocketClient extends React.Component {
 	takeMyScreenShot = (event) => {
 		// window.open(window.URL.createObjectURL(this.screenShotPage()));
 		// window.open(window.URL.createObjectURL(this.takeScreenShotDirect()));
-    // let screenShotBlog = this.screenShotPage();
     this.pushNewScreenShot(this.screenShotPage());
 	}
 
@@ -243,11 +233,15 @@ export default class WebSocketClient extends React.Component {
     });
   }
 
-  getImageFromBlob = (imgBlob) => {
-    let urlCreator = window.URL || window.webkitURL;
-    let blob = new Blob([imgBlob], {type: 'text/jpeg'});
+  startSharing = () => {
+    setInterval(this.emitScreenShot, 3000);
+    // this.emitScreenShot();
+  }
 
-  	return urlCreator.createObjectURL(imgBlob);
+  emitScreenShot = () => {
+    let screenBlob = this.screenShotPage();
+    this.p2pSocket.emit('peer-file', {file:screenBlob});
+    // console.log("[ -> ]", screenBlob);
   }
 
 	render() {
@@ -267,7 +261,7 @@ export default class WebSocketClient extends React.Component {
 					{ (this.state.isSwitchedToWebRTC) ? <h2>WebRTC enabled</h2> : '' }
 				</div>
 				<div>
-					<FlatButton label="Take Screenshot" primary={true} onClick={this.takeMyScreenShot} style={{margin: '5px'}}/>
+					<FlatButton label="Start Screen Sharing" primary={true} onClick={this.startSharing} style={{margin: '5px'}}/>
 				</div>
 				<div>
 					Messages({this.state.messages.length})
@@ -283,12 +277,10 @@ export default class WebSocketClient extends React.Component {
 					</ul>
 				</div>
 				<div>
-					{
-						this.state.pageScreenshotColln.map((imgUrl, index) => {
-							return <a key={index} href={imgUrl}>Click here</a>
-						})
-					}
+          <pre>Screen sharing will appear here</pre>
+					{ (this.state.pageScreenshotUrl) ? <iframe style={{width:'800px', height:'600px', overflow:'hidden'}} src={this.state.pageScreenshotUrl} /> : ''}
 				</div>
-			</div>);
+			</div>
+    );
 	}
 }
